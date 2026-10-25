@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run unit tests
+        run: node --test
+
+      - name: CLI smoke test
+        run: |
+          node cli.js list prompts.md
+          out=$(node cli.js render prompts.md 中译英 --set 原文=hello)
+          echo "$out" | grep -q "hello"
+          echo "$out" | grep -q "自然"
+          node cli.js render prompts.md 中译英 2>/dev/null && { echo "should fail on missing var"; exit 1; } || true
+          echo "CLI_SMOKE_OK"
