@@ -1,0 +1,9 @@
+{
+  "name": "prompt-md",
+  "version": "0.1.0",
+  "description": "Manage LLM prompts as Markdown — {{variable}} templates with defaults, zero dependencies",
+  "private": true,
+  "license": "MIT",
+  "main": "lib/index.js",
+  "scripts": { "test": "node --test" }
+}
