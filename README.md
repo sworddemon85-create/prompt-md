@@ -1,90 +1,92 @@
 # 📝 prompt-md
 
+**English** | [中文](README.zh-CN.md)
+
 [![CI](https://github.com/sworddemon85-create/prompt-md/actions/workflows/ci.yml/badge.svg)](https://github.com/sworddemon85-create/prompt-md/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Zero deps](https://img.shields.io/badge/dependencies-0-brightgreen)](package.json)
 
-**用 Markdown 管理 LLM 提示词模板**：一个 .md 文件装下一整套提示词，`{{变量}}` 占位、`{{变量|默认值}}` 兜底，命令行一键渲染成最终提示词。
+**Manage LLM prompts as Markdown.** One `.md` file holds a whole prompt collection: `# headings` split templates, `{{variable}}` placeholders render with required-variable validation, `{{variable|default}}` provides fallbacks. A tiny CLI turns templates into final prompts.
 
-> Manage LLM prompts as Markdown. One file, many templates, `{{variable}}` substitution with defaults, zero dependencies.
+Because prompts are plain Markdown, they get git history, diffs, and code review for free.
 
-## ✨ 特性
+## ✨ Features
 
-- **一个文件一套提示词** — `# 标题` 就是一个模板，可以往 Git 里提交、做 diff、做 code review
-- **变量系统** — `{{变量}}` 必填（缺失时报错并列出）、`{{变量|默认值}}` 可选；变量名支持中文
-- **自动提取变量清单** — `list` 命令告诉你每个模板需要什么
-- **零依赖** — 只用 Node 内置模块
-- **库 + CLI 双形态** — 嵌入你自己的脚本，或直接命令行使用
+- **One file, many prompts** — each `# heading` starts a template; keep a whole collection in a single tracked file
+- **Variable system** — `{{variable}}` is required (missing ones are reported together with names), `{{variable|default}}` is optional; Chinese variable names supported
+- **Variable introspection** — `list` tells you exactly what each template needs (required vs. optional with defaults)
+- **Zero dependencies** — Node.js built-ins only
+- **Library + CLI** — embed in your own scripts or use from the terminal
 
-## 🚀 用法
+## 🚀 Usage
 
 ```bash
 git clone https://github.com/sworddemon85-create/prompt-md.git
 cd prompt-md
 
-# 列出示例文件里的模板与变量
+# list templates and their variables
 node cli.js list prompts.md
 
-# 渲染（可选变量用默认值）
-node cli.js render prompts.md 中译英 --set 原文=今天天气不错
+# render (optional variables fall back to defaults; the sample collection
+# uses Chinese template/variable names — yours can be anything)
+node cli.js render prompts.md 中译英 --set 原文="hello world"
 
-# 全部显式指定
-node cli.js render prompts.md 中译英 --set 原文=今天天气不错 --set 语气=正式
+# specify everything explicitly
+node cli.js render prompts.md 中译英 --set 原文="hello world" --set 语气=formal
 
-# 查看模板原文
+# view the raw template
 node cli.js show prompts.md 代码审查
 
-# 作为库使用
-node -e "const {parsePrompts,render}=require('./lib');const {prompts}=parsePrompts(require('fs').readFileSync('prompts.md','utf8'));console.log(render(prompts[0].template,{原文:'你好'}))"
+# as a library
+node -e "const {parsePrompts,render}=require('./lib');const {prompts}=parsePrompts(require('fs').readFileSync('prompts.md','utf8'));console.log(render(prompts[0].template,{原文:'hi'}))"
 ```
 
-## 📄 模板格式
+## 📄 Template format
 
 ```markdown
 ---
-collection: 我的提示词集        ← 可选的文件级元信息
+collection: my prompts        ← optional file-level metadata
 ---
 
-# 模板名                        ← 每个模板一个标题
+# Template name               ← one template per heading
 
-标题后的第一段文字是描述（给人看的）。   ← 支持 {{变量}}
+First paragraph is the description (for humans).   ← supports {{variables}}
 
-正文从这里开始，{{变量}} 会被替换，
-{{变量|默认值}} 在缺省时使用默认值。
+Body starts here; {{variable}} gets substituted,
+{{variable|default}} kicks in when a value is missing.
 ```
 
-规则：
+Rules:
 
-- `#` 到 `##` 等更深级的标题都属于当前模板（正文的一部分）
-- 同级或更高级标题开启下一个模板
-- 描述里的变量同样参与渲染
+- Deeper headings (`##`, `###`) belong to the current template's body
+- A same-level or higher heading starts the next template
+- Variables inside descriptions are rendered too
 
-## 🧪 测试
+## 🧪 Tests
 
 ```bash
-npm test    # node --test，14 个用例
+npm test    # node --test — 14 unit tests
 ```
 
-覆盖：frontmatter 解析、模板拆分与描述提取、正文清理、变量替换/默认值/缺失报错、中文变量名、`{{ name }}` 宽松空白。
+Covers: frontmatter parsing, template splitting and description extraction, body trimming, variable substitution / defaults / missing-variable errors, Chinese variable names, tolerant `{{ name }}` whitespace.
 
-## 📁 结构
+## 📁 Structure
 
 ```
 prompt-md/
 ├── lib/
-│   ├── parser.js   # Markdown → 提示词数组（frontmatter + 标题分节）
-│   ├── render.js   # {{变量}} 渲染与变量提取
-│   └── index.js    # 模块入口
-├── cli.js          # list / show / render 三个子命令
-├── prompts.md      # 示例提示词集
-└── test/           # 单元测试
+│   ├── parser.js   # Markdown → prompt array (frontmatter + heading sections)
+│   ├── render.js   # {{variable}} rendering and variable extraction
+│   └── index.js    # module entry
+├── cli.js          # list / show / render subcommands
+├── prompts.md      # sample prompt collection
+└── test/           # unit tests
 ```
 
-## 💡 为什么不用 JSON/YAML 存提示词？
+## 💡 Why Markdown instead of JSON/YAML?
 
-Markdown 是写给人和模型看的格式：多行文本、代码块、列表都自然表达，
-Git diff 清晰可读，还能直接粘贴到任何聊天框里用。变量系统补上了"模板化"这最后一块拼图。
+Markdown is the format both humans and models read best: multi-line text, code blocks, and lists all come naturally. Git diffs stay readable, and any prompt pastes straight into any chat window. The variable system adds the last missing piece — templating.
 
-## 📄 许可证
+## 📄 License
 
 [MIT](LICENSE)
