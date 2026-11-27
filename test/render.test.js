@@ -49,3 +49,16 @@ test("模板中无变量时原样返回", () => {
 test("变量两侧允许空白：{{ name }}", () => {
   assert.strictEqual(render("{{ name }}", { name: "Sword" }), "Sword");
 });
+
+test("继承属性不能满足模板变量或覆盖默认值", () => {
+  assert.throws(() => render("{{constructor}} {{toString}}", {}), /缺少变量/);
+  assert.strictEqual(render("{{constructor|default}}", {}), "default");
+  assert.throws(() => render("{{name}}", Object.create({ name: "inherited" })), /缺少变量/);
+});
+
+test("同名自有属性与无原型变量对象正常渲染", () => {
+  assert.strictEqual(render("{{constructor}}", { constructor: "explicit" }), "explicit");
+  const vars = Object.create(null);
+  vars.toString = "custom";
+  assert.strictEqual(render("{{toString}}", vars), "custom");
+});
