@@ -68,3 +68,30 @@ test("仅有 frontmatter 时返回空模板", () => {
   assert.strictEqual(meta.collection, "x");
   assert.deepStrictEqual(prompts, []);
 });
+
+for (const fence of ["```", "~~~", "````"]) {
+  test(`代码块里的标题不拆分模板: ${fence}`, () => {
+    const block = [fence + "text", "# not a template", "## still code", fence].join("\n");
+    const { prompts } = parsePrompts(["# first", "description", block, "# second", "description", "body"].join("\n"));
+    assert.deepStrictEqual(prompts.map(p => p.name), ["first", "second"]);
+    assert.strictEqual(prompts[0].template, block);
+  });
+}
+test("代码块可直接作为正文，不丢失起始围栏", () => {
+  const block = "```python\n# comment\nprint(1)\n```";
+  const { prompts } = parsePrompts("# code\n\n" + block);
+  assert.strictEqual(prompts[0].description, "");
+  assert.strictEqual(prompts[0].template, block);
+});
+test("较短围栏和错误字符不能关闭代码块", () => {
+  const block = "````\n```\n~~~\n# inside\n`````";
+  const {prompts} = parsePrompts("# first\ndesc\n" + block + "\n# second\ndesc");
+  assert.deepStrictEqual(prompts.map(p=>p.name),["first","second"]);
+  assert.strictEqual(prompts[0].template,block);
+});
+test("模板前的代码块不产生模板，未闭合代码块延续到文件末尾", () => {
+  assert.deepStrictEqual(parsePrompts("~~~\n# ignored\n~~~").prompts, []);
+  const {prompts} = parsePrompts("# first\ndesc\n   ~~~text\n# inside");
+  assert.strictEqual(prompts.length,1);
+  assert.ok(prompts[0].template.includes("# inside"));
+});
