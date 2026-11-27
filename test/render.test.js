@@ -62,3 +62,10 @@ test("同名自有属性与无原型变量对象正常渲染", () => {
   vars.toString = "custom";
   assert.strictEqual(render("{{toString}}", vars), "custom");
 });
+
+test("extractVars 任意必填出现优先于同名默认值", () => {
+  for (const template of ["{{name|guest}} {{name}}", "{{name}} {{name|guest}}"] ) {
+    assert.deepStrictEqual(extractVars(template), [{ name: "name", hasDefault: false, defaultValue: "" }]);
+    assert.throws(() => render(template), /缺少变量/);
+  }
+});
