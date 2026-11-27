@@ -14,12 +14,12 @@
  */
 
 function parseArgs(argv) {
-  const args = { _: [], set: {} };
+  const args = { _: [], set: Object.create(null) };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--set") {
       const kv = argv[++i];
-      const eq = kv.indexOf("=");
-      if (eq <= 0) { console.error(`--set 需要 k=v 形式，收到: ${kv}`); process.exit(1); }
+      const eq = typeof kv === "string" ? kv.indexOf("=") : -1;
+      if (eq <= 0) throw new Error(`--set 需要 k=v 形式，收到: ${kv ?? "（缺少参数）"}`);
       args.set[kv.slice(0, eq)] = kv.slice(eq + 1);
     } else if (argv[i] === "--help" || argv[i] === "-h") {
       args.help = true;
